@@ -1,0 +1,638 @@
+/* Login-Signup Page Styles */
+:root {
+  --primary-color: #5c33ff;
+  --secondary-color: #33d2ff;
+  --dark-bg: #050510;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --text-light: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.7);
+  --text-dimmer: rgba(255, 255, 255, 0.5);
+  --gradient: linear-gradient(90deg, #5c33ff, #33d2ff);
+  --gradient-vertical: linear-gradient(180deg, #5c33ff, #33d2ff);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --card-border: 1px solid rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --error-color: #ff4d4f;
+}
+
+/* Base Layout */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--dark-bg);
+  position: relative;
+  overflow: hidden;
+  font-size: 16px;
+}
+
+/* Particles Background */
+.particles-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  opacity: 0.2;
+}
+
+/* Split Container Layout */
+.auth-split-container {
+  display: flex;
+  width: 100%;
+  max-width: 100%; /* Changed from 1400px to use full width */
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Left Side - Info Section */
+.auth-info-section {
+  flex: 1; /* Changed from 1.2 to make both sides equal */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 4rem;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(92, 51, 255, 0.05), transparent);
+}
+
+.info-content {
+  position: relative;
+  z-index: 2;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  font-size: 3rem; /* Increased from 2.4rem */
+  font-weight: 800;
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.gradient-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ai-badge {
+  font-size: 1.2rem;
+  background: var(--gradient);
+  padding: 0.25rem 0.6rem;
+  border-radius: 5px;
+  margin-left: 0.6rem;
+}
+
+.info-title {
+  font-size: 3.8rem; /* Increased from 3.2rem */
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  background: linear-gradient(90deg, #fff, rgba(255,255,255,0.8));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.info-description {
+  font-size: 1.5rem; /* Increased from 1.25rem */
+  color: var(--text-dim);
+  margin-bottom: 3rem;
+  max-width: 800px; /* Increased from 600px */
+  line-height: 1.6;
+}
+
+/* Info Features */
+.info-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.info-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(92, 51, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary-color);
+  flex-shrink: 0;
+}
+
+.feature-text h3 {
+  font-size: 1.5rem; /* Increased from 1.3rem */
+  margin-bottom: 0.5rem;
+  color: var(--text-light);
+}
+
+.feature-text p {
+  font-size: 1.3rem; /* Increased from 1.1rem */
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Info Stats */
+.info-stats {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat h4 {
+  font-size: 2.6rem; /* Increased from 2.2rem */
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.stat p {
+  font-size: 1.3rem; /* Increased from 1.1rem */
+  color: var(--text-dim);
+}
+
+/* Brain Graphic */
+.brain-graphic-container {
+  position: absolute;
+  bottom: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  opacity: 0.2;
+  z-index: 1;
+}
+
+.brain-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+  animation: pulse 3s infinite ease-in-out;
+}
+
+.brain-connections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="%235c33ff" stroke-width="0.5"/><circle cx="50" cy="50" r="30" fill="none" stroke="%2333d2ff" stroke-width="0.5"/><g fill="%235c33ff"><circle cx="50" cy="5" r="3"/><circle cx="5" cy="50" r="3"/><circle cx="50" cy="95" r="3"/><circle cx="95" cy="50" r="3"/></g><g fill="%2333d2ff"><circle cx="26" cy="26" r="2"/><circle cx="74" cy="26" r="2"/><circle cx="26" cy="74" r="2"/><circle cx="74" cy="74" r="2"/></g></svg>') center/contain no-repeat;
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.2; }
+  50% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Right Side - Auth Form Section */
+.auth-form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 800px; /* Increased from 600px */
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  border-radius: 24px;
+  border: var(--glass-border);
+  padding: 3rem;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(92, 51, 255, 0.1), transparent 70%);
+  z-index: -1;
+  animation: rotate 20s linear infinite;
+}
+
+/* Auth Header */
+.auth-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.auth-header h2 {
+  font-size: 3rem; /* Increased from 2.2rem */
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  color: var(--text-light);
+}
+
+.auth-header p {
+  color: var(--text-dim);
+  font-size: 1.4rem; /* Increased from 1.2rem */
+}
+
+/* Auth Tabs */
+.auth-tabs {
+  display: flex;
+  position: relative;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  margin-bottom: 2.5rem;
+  padding: 0.3rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 1.2rem 1rem;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.4rem; /* Increased from 1.2rem */
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s;
+}
+
+.auth-tab.active {
+  color: white;
+}
+
+.tab-indicator {
+  position: absolute;
+  height: calc(100% - 0.6rem);
+  width: calc(50% - 0.6rem);
+  background: var(--gradient);
+  border-radius: 8px;
+  top: 0.3rem;
+  transition: left 0.3s ease;
+  z-index: 1;
+}
+
+.tab-indicator.left {
+  left: 0.3rem;
+}
+
+.tab-indicator.right {
+  left: calc(50% + 0.3rem);
+}
+
+/* Form Styles */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 1.3rem; /* Increased from 1.1rem */
+  margin-bottom: 0.5rem;
+  color: var(--text-dim);
+}
+
+.input-container {
+  position: relative;
+}
+
+.input-container input {
+  width: 100%;
+  padding: 1.2rem;
+  padding-left: 3.2rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  font-size: 1.3rem; /* Increased from 1.1rem */
+  transition: all 0.3s;
+}
+
+.input-container input::placeholder {
+  color: var(--text-dimmer);
+}
+
+.input-container input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(92, 51, 255, 0.2);
+}
+
+.input-container input.error {
+  border-color: var(--error-color);
+}
+
+.input-icon {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dimmer);
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Form Options */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+}
+
+.remember-me input[type="checkbox"] {
+  accent-color: var(--primary-color);
+  width: 18px;
+  height: 18px;
+}
+
+.forgot-password {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.3s;
+}
+
+.forgot-password:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn {
+  padding: 1.2rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-size: 1.4rem; /* Increased from 1.2rem */
+  border: none;
+  outline: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--gradient);
+  color: white;
+  box-shadow: 0 4px 15px rgba(92, 51, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(92, 51, 255, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* Spinner */
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Social Login */
+.social-login {
+  margin-top: 2rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.divider span {
+  padding: 0 1rem;
+  color: var(--text-dimmer);
+  font-size: 1.1rem;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.social-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.social-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.social-button svg {
+  flex-shrink: 0;
+}
+
+/* Footer */
+.auth-footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--text-dimmer);
+  font-size: 1.1rem;
+}
+
+.auth-footer a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.auth-footer a:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .auth-split-container {
+    max-width: 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .auth-info-section {
+    padding: 2rem;
+  }
+  
+  .info-title {
+    font-size: 2.8rem;
+  }
+  
+  .brain-graphic-container {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 992px) {
+  .auth-split-container {
+    flex-direction: column;
+  }
+  
+  .auth-info-section {
+    padding: 3rem 2rem;
+  }
+  
+  .info-stats {
+    justify-content: center;
+  }
+  
+  .brain-graphic-container {
+    display: none;
+  }
+  
+  .auth-form-section {
+    padding: 3rem 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .info-title {
+    font-size: 2.4rem;
+  }
+  
+  .info-description {
+    font-size: 1.1rem;
+  }
+  
+  .auth-card {
+    padding: 2rem;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .info-stats {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .social-buttons {
+    flex-direction: column;
+  }
+  
+  .auth-tab {
+    padding: 0.8rem;
+    font-size: 1.1rem;
+  }
+}
