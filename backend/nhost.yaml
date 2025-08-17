@@ -1,0 +1,9 @@
+// ...existing code...
+    oauth:
+      github:
+        clientId: "${github_clientId}"
+        clientSecret: "${github_clientSecret}"
+      google:
+        clientId: "${google_clientId}"
+        clientSecret: "${google_clientSecret}"
+// ...existing code...

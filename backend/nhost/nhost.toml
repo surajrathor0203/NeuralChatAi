@@ -80,6 +80,7 @@ enabled = false
 enabled = false
 
 [auth.method.emailPassword]
+enabled = true
 hibpEnabled = false
 emailVerificationRequired = true
 passwordMinLength = 9
@@ -105,13 +106,17 @@ enabled = false
 enabled = false
 
 [auth.method.oauth.github]
-enabled = false
+enabled = true
+clientId = '{{ secrets.github_clientId }}'
+clientSecret = '{{ secrets.github_clientSecret }}'
 
 [auth.method.oauth.gitlab]
 enabled = false
 
 [auth.method.oauth.google]
-enabled = false
+enabled = true
+clientId = '{{ secrets.google_clientId }}'
+clientSecret = '{{ secrets.google_clientSecret }}'
 
 [auth.method.oauth.linkedin]
 enabled = false

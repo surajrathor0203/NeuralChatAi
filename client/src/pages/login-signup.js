@@ -1,10 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  useSignInEmailPassword, 
+  useSignUpEmailPassword, 
+  useAuthenticationStatus,
+  useAuthenticated,
+  useUserData
+} from '@nhost/react';
 import '../styles/login-signup.css';
 
 const LoginSignup = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Nhost hooks for authentication
+  const { signInEmailPassword, isLoading: isSigningIn, isError: isSignInError, error: signInError } = useSignInEmailPassword();
+  const { signUpEmailPassword, isLoading: isSigningUp, isError: isSignUpError, error: signUpError, isSuccess: isSignUpSuccess, needsEmailVerification } = useSignUpEmailPassword();
+  const { isLoading: isAuthLoading } = useAuthenticationStatus(); // Use the correct hook
+  const isAuthenticated = useAuthenticated();
+  const userData = useUserData();
+  
+  // UI state
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
     login: {
@@ -23,12 +39,18 @@ const LoginSignup = () => {
     login: {},
     signup: {}
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serviceRetrying, setServiceRetrying] = useState(false);
+
+  // Add state for success popup
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const isSubmitting = isSigningIn || isSigningUp || isAuthLoading;
 
   // Particle animation state
   const [particles, setParticles] = useState([]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Generate random particles for background
     const newParticles = [];
     for (let i = 0; i < 50; i++) {
@@ -63,13 +85,20 @@ const LoginSignup = () => {
     };
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     if (tabParam === 'signup') {
       setActiveTab('signup');
     }
   }, [location]);
+
+  React.useEffect(() => {
+    // If authenticated, redirect to home
+    if (isAuthenticated && !isAuthLoading) { // Update variable name here too
+      navigate('/home');
+    }
+  }, [isAuthenticated, isAuthLoading, navigate]); // And here
 
   const handleChange = (e, formType) => {
     const { name, value, type, checked } = e.target;
@@ -134,30 +163,102 @@ const LoginSignup = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e, formType) => {
+  const handleSubmit = async (e, formType) => {
     e.preventDefault();
     
     if (validateForm(formType)) {
-      setIsSubmitting(true);
-      
-      // Simulate API call
-      setTimeout(() => {
-        console.log(`${formType} form submitted:`, formData[formType]);
-        setIsSubmitting(false);
-        
-        // Clear form after successful submission (optional)
-        // setFormData(prev => ({
-        //   ...prev,
-        //   [formType]: {
-        //     email: '',
-        //     password: '',
-        //     ...(formType === 'signup' ? { name: '', confirmPassword: '' } : {})
-        //   }
-        // }));
-        
-        // You would typically redirect the user or show a success message here
-      }, 1500);
+      if (formType === 'login') {
+        await handleSignIn();
+      } else {
+        await handleSignUp();
+      }
     }
+  };
+
+  // Add function to retry connection
+  const handleRetryConnection = async () => {
+    setServiceRetrying(true);
+    
+    try {
+      // Try making a minimal request to check if service is back
+      if (activeTab === 'login') {
+        await signInEmailPassword(formData.login.email, 'wrong-password-to-test-connection');
+      } else {
+        await signUpEmailPassword(formData.signup.email, 'wrong-password-to-test-connection');
+      }
+    } catch (error) {
+      console.error("Error while retrying connection:", error);
+    } finally {
+      setServiceRetrying(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    const { email, password, name } = formData.signup;
+    
+    await signUpEmailPassword(email, password, {
+      displayName: name,
+      metadata: {
+        name: name
+      }
+    });
+  };
+
+  const handleSignIn = async () => {
+    const { email, password } = formData.login;
+    await signInEmailPassword(email, password);
+  };
+
+  const handleOAuthSignIn = async (provider) => {
+    // This would need to be implemented with the appropriate Nhost hook
+    // Currently the @nhost/react library doesn't provide a hook for this
+    // Consider using window.location.href to the appropriate Nhost OAuth URL
+    console.log(`OAuth sign in with ${provider} not implemented`);
+  };
+
+  // Add a service unavailable message component
+  const renderServiceUnavailableMessage = (error, formType) => {
+    if (!error || !error.message) {
+      return null;
+    }
+    
+    // Check if the error message indicates a service issue
+    const isServiceError = 
+      error.message.includes('service') || 
+      error.message.includes('unavailable') ||
+      error.message.includes('connection') ||
+      error.message.includes('network') ||
+      error.message.includes('backend');
+    
+    if (!isServiceError) return null;
+    
+    return (
+      <div className="service-unavailable-message">
+        <div className="error-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 8V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 16H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <p>{error.message}</p>
+        <button 
+          type="button" 
+          className="btn btn-secondary"
+          onClick={handleRetryConnection}
+          disabled={serviceRetrying}
+        >
+          {serviceRetrying ? (
+            <div className="spinner small"></div>
+          ) : (
+            'Retry Connection'
+          )}
+        </button>
+        <p className="help-text">
+          You may need to start the Nhost services locally or check your internet connection.
+        </p>
+      </div>
+    );
   };
 
   const renderLoginForm = () => (
@@ -232,12 +333,18 @@ const LoginSignup = () => {
         )}
       </button>
       
+      {isSignInError && renderServiceUnavailableMessage(signInError, 'login')}
+      
+      {isSignInError && !renderServiceUnavailableMessage(signInError, 'login') && 
+        <div className="error-message">{signInError.message}</div>
+      }
+
       <div className="social-login">
         <div className="divider">
           <span>Or continue with</span>
         </div>
         <div className="social-buttons">
-          <button type="button" className="social-button google">
+          <button type="button" className="social-button google" onClick={() => handleOAuthSignIn('google')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#DB4437" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M17.4 10.4H7.6" stroke="#DB4437" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -245,7 +352,7 @@ const LoginSignup = () => {
             </svg>
             Google
           </button>
-          <button type="button" className="social-button github">
+          <button type="button" className="social-button github" onClick={() => handleOAuthSignIn('github')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 19C4 20.5 4 16.5 2 16M16 22V18.13C16.0375 17.6532 15.9731 17.1738 15.811 16.7238C15.6489 16.2738 15.3929 15.8634 15.06 15.52C18.2 15.17 21.5 13.98 21.5 8.52C21.4997 7.12383 20.9627 5.7812 20 4.77C20.4559 3.54851 20.4236 2.19835 19.91 1C19.91 1 18.73 0.650001 16 2.48C13.708 1.85882 11.292 1.85882 9 2.48C6.27 0.650001 5.09 1 5.09 1C4.57638 2.19835 4.54414 3.54851 5 4.77C4.03013 5.7887 3.49252 7.14346 3.5 8.55C3.5 13.97 6.8 15.16 9.94 15.55C9.611 15.89 9.35726 16.2954 9.19531 16.7399C9.03335 17.1844 8.96681 17.6581 9 18.13V22" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -362,12 +469,18 @@ const LoginSignup = () => {
         )}
       </button>
       
+      {isSignUpError && renderServiceUnavailableMessage(signUpError, 'signup')}
+      
+      {isSignUpError && !renderServiceUnavailableMessage(signUpError, 'signup') && 
+        <div className="error-message">{signUpError.message}</div>
+      }
+
       <div className="social-login">
         <div className="divider">
           <span>Or sign up with</span>
         </div>
         <div className="social-buttons">
-          <button type="button" className="social-button google">
+          <button type="button" className="social-button google" onClick={() => handleOAuthSignIn('google')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#DB4437" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M17.4 10.4H7.6" stroke="#DB4437" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -375,7 +488,7 @@ const LoginSignup = () => {
             </svg>
             Google
           </button>
-          <button type="button" className="social-button github">
+          <button type="button" className="social-button github" onClick={() => handleOAuthSignIn('github')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 19C4 20.5 4 16.5 2 16M16 22V18.13C16.0375 17.6532 15.9731 17.1738 15.811 16.7238C15.6489 16.2738 15.3929 15.8634 15.06 15.52C18.2 15.17 21.5 13.98 21.5 8.52C21.4997 7.12383 20.9627 5.7812 20 4.77C20.4559 3.54851 20.4236 2.19835 19.91 1C19.91 1 18.73 0.650001 16 2.48C13.708 1.85882 11.292 1.85882 9 2.48C6.27 0.650001 5.09 1 5.09 1C4.57638 2.19835 4.54414 3.54851 5 4.77C4.03013 5.7887 3.49252 7.14346 3.5 8.55C3.5 13.97 6.8 15.16 9.94 15.55C9.611 15.89 9.35726 16.2954 9.19531 16.7399C9.03335 17.1844 8.96681 17.6581 9 18.13V22" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -392,8 +505,76 @@ const LoginSignup = () => {
     navigate('/');
   };
 
+  // Update useEffect to watch for signup success AND email verification
+  React.useEffect(() => {
+    // If signup was successful OR needs email verification, show popup and reset form
+    if (isSignUpSuccess || needsEmailVerification) {
+      // Reset both the signup and login forms
+      setFormData({
+        login: {
+          email: '',
+          password: '',
+          rememberMe: false
+        },
+        signup: {
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        }
+      });
+      
+      // Show success message - different for verification vs. success
+      if (needsEmailVerification) {
+        setSuccessMessage(`We've sent a verification email to your inbox. Please check your email and click the verification link to activate your account. If you don't see it, please check your spam folder.`);
+      } else {
+        setSuccessMessage('Your account has been created successfully!');
+      }
+      
+      setShowSuccessPopup(true);
+      
+      // Auto-switch to login tab after successful signup
+      setTimeout(() => {
+        setActiveTab('login');
+      }, 3000);
+    }
+  }, [isSignUpSuccess, needsEmailVerification]);
+
+  // Add function to dismiss success popup
+  const handleDismissSuccess = () => {
+    setShowSuccessPopup(false);
+  };
+
+  // Add success popup component
+  const renderSuccessPopup = () => {
+    if (!showSuccessPopup) return null;
+
+    return (
+      <div className="success-popup">
+        <div className="success-popup-content">
+          <div className="success-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 11.0801V12.0001C21.9988 14.1565 21.3005 16.2548 20.0093 17.9819C18.7182 19.7091 16.9033 20.9726 14.8354 21.5839C12.7674 22.1952 10.5573 22.1218 8.53447 21.3747C6.51168 20.6276 4.78465 19.2488 3.61096 17.4373C2.43727 15.6257 1.87979 13.4869 2.02168 11.3363C2.16356 9.18563 2.99721 7.13817 4.39828 5.49707C5.79935 3.85598 7.69279 2.71856 9.79619 2.24691C11.8996 1.77527 14.1003 1.98837 16.07 2.86011" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M22 4L12 14.01L9 11.01" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div className="success-message">
+            <h3>{needsEmailVerification ? "Verification Email Sent!" : "Signup Done!"}</h3>
+            <p>{successMessage}</p>
+          </div>
+          <button className="btn btn-sm" onClick={handleDismissSuccess}>
+            Dismiss
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="auth-page">
+      {/* Add success popup */}
+      {renderSuccessPopup()}
+      
       {/* Animated particles background */}
       <div className="particles-background">
         {particles.map(particle => (
