@@ -1,0 +1,90 @@
+{
+  "name": "auth-signin",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "auth-signin",
+        "responseMode": "lastNode",
+        "options": { "responseData": "={{$json}}" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "auth-signin"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst { email, password, provider } = body;\n\nif (provider) {\n  if (!['google', 'github', 'facebook', 'apple'].includes(provider)) {\n    throw new Error(`Unsupported provider: ${provider}`);\n  }\n  return [{ provider, isOAuth: true }];\n}\n\nif (!email || !password) {\n  throw new Error('Email and password are required for email signin');\n}\n\nreturn [{ email, password, isOAuth: false }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.isOAuth}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "name": "Check Auth Type"
+    },
+    {
+      "parameters": {
+        "url": "https://local.auth.local.nhost.run/v1/signin/email-password",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"email\": $json.email,\n  \"password\": $json.password\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [800, 200],
+      "name": "Email Password Signin"
+    },
+    {
+      "parameters": {
+        "url": "=https://local.auth.local.nhost.run/v1/signin/provider/{{$json.provider}}",
+        "method": "GET",
+        "responseFormat": "json"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [800, 400],
+      "name": "OAuth Signin"
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = $json;\n\nif (response.error) {\n  return [{ error: response.error }];\n}\n\nif ($node['Check Auth Type'].json.isOAuth) {\n  return [{\n    success: true,\n    redirectUrl: response.url || response.redirectUrl\n  }];\n}\n\nreturn [{\n  success: true,\n  session: response.session,\n  user: response.user\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "name": "Format Response"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]] },
+    "Validate Input": { "main": [[{ "node": "Check Auth Type", "type": "main", "index": 0 }]] },
+    "Check Auth Type": { 
+      "main": [
+        [{ "node": "Email Password Signin", "type": "main", "index": 0 }],
+        [{ "node": "OAuth Signin", "type": "main", "index": 0 }]
+      ] 
+    },
+    "Email Password Signin": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] },
+    "OAuth Signin": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] }
+  },
+  "active": true
+}

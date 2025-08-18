@@ -1,0 +1,56 @@
+{
+  "name": "auth-signup",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "auth-signup",
+        "responseMode": "lastNode",
+        "options": { "responseData": "={{$json}}" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "auth-signup"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst { email, password, displayName, metadata, redirectTo, locale, allowedRoles, defaultRole } = body;\n\nif (!email || !password) {\n  throw new Error('Email and password are required');\n}\n\nreturn [{ email, password, displayName, metadata, redirectTo, locale, allowedRoles, defaultRole }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "url": "https://local.auth.local.nhost.run/v1/signup/email-password",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"email\": $json.email,\n  \"password\": $json.password,\n  \"options\": {\n    \"displayName\": $json.displayName,\n    \"metadata\": $json.metadata,\n    \"redirectTo\": $json.redirectTo,\n    \"locale\": $json.locale,\n    \"allowedRoles\": $json.allowedRoles,\n    \"defaultRole\": $json.defaultRole\n  }\n}",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [600, 300],
+      "name": "Nhost Signup"
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = $json;\n\nif (response.error) {\n  return [{ error: response.error }];\n}\n\nconst needsEmailVerification = response.session === null && response.error === null;\n\nreturn [{\n  success: true,\n  needsEmailVerification,\n  session: response.session,\n  user: response.user,\n  redirectUrl: $node['Validate Input'].json.redirectTo\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [800, 300],
+      "name": "Format Response"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]] },
+    "Validate Input": { "main": [[{ "node": "Nhost Signup", "type": "main", "index": 0 }]] },
+    "Nhost Signup": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] }
+  },
+  "active": true
+}

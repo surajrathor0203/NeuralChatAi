@@ -1,0 +1,58 @@
+{
+  "name": "graphql-proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "graphql-proxy",
+        "responseMode": "lastNode",
+        "options": { "responseData": "={{$json}}" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "graphql-proxy"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst headers = $headers;\n\nconst query = body.query;\nconst variables = body.variables || {};\nconst operationName = body.operationName;\n\nif (!query) {\n  throw new Error('GraphQL query is required');\n}\n\nconst authHeader = headers.authorization || headers.Authorization;\n\nreturn [{ query, variables, operationName, authHeader }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "name": "Extract GraphQL"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.HASURA_GRAPHQL_ENDPOINT}}",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"query\": $json.query,\n  \"variables\": $json.variables,\n  \"operationName\": $json.operationName\n}",
+        "headers": {
+          "Content-Type": "application/json",
+          "x-hasura-admin-secret": "={{$env.HASURA_ADMIN_SECRET}}",
+          "Authorization": "={{$json.authHeader}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [600, 300],
+      "name": "Hasura GraphQL"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [$json];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [800, 300],
+      "name": "Return Response"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Extract GraphQL", "type": "main", "index": 0 }]] },
+    "Extract GraphQL": { "main": [[{ "node": "Hasura GraphQL", "type": "main", "index": 0 }]] },
+    "Hasura GraphQL": { "main": [[{ "node": "Return Response", "type": "main", "index": 0 }]] }
+  },
+  "active": true
+}

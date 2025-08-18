@@ -1,0 +1,115 @@
+{
+  "name": "sendMessage",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "send-message",
+        "responseMode": "lastNode",
+        "options": { "responseData": "={{$json}}" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "send-message"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst headers = $headers;\n\nconst chat_id = body.chat_id;\nconst content = body.content;\nconst user_id = headers['x-hasura-user-id'] || headers['X-Hasura-User-Id'];\n\nif (!chat_id || !content || !user_id) {\n  throw new Error('Missing chat_id/content/user_id');\n}\n\nreturn [{ chat_id, content, user_id }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "name": "Extract Inputs"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.HASURA_GRAPHQL_ENDPOINT}}",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "sendQuery": true,
+        "query": "query VerifyChat($chat_id: uuid!) { chats_by_pk(id: $chat_id) { id user_id } }",
+        "variables": "={\"chat_id\": $json.chat_id}",
+        "headers": {
+          "Content-Type": "application/json",
+          "x-hasura-admin-secret": "={{$env.HASURA_ADMIN_SECRET}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [720, 300],
+      "name": "Hasura: Verify Ownership"
+    },
+    {
+      "parameters": {
+        "functionCode": "const chat = items[0].json.data.chats_by_pk;\nif (!chat || chat.user_id !== items[0].json.user_id) {\n  throw new Error('Forbidden: chat does not belong to user');\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [980, 300],
+      "name": "Assert Owner"
+    },
+    {
+      "parameters": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"model\": $env.OPENROUTER_MODEL,\n  \"messages\": [\n    {\"role\":\"system\",\"content\":\"You are a helpful chatbot.\"},\n    {\"role\":\"user\",\"content\": $json.content}\n  ]\n}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{$env.OPENROUTER_API_KEY}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1240, 300],
+      "name": "OpenRouter"
+    },
+    {
+      "parameters": {
+        "functionCode": "const choice = $json.choices?.[0];\nif (!choice) throw new Error('No response');\nconst assistant = choice.message?.content || '';\nreturn [{ assistant }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1500, 300],
+      "name": "Extract Assistant"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.HASURA_GRAPHQL_ENDPOINT}}",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "sendQuery": true,
+        "query": "mutation InsertAssistant($chat_id: uuid!, $content: String!) { insert_messages_one(object: { chat_id: $chat_id, role: \"assistant\", content: $content }) { id role content created_at } }",
+        "variables": "={\"chat_id\": $json.chat_id, \"content\": $json.assistant}",
+        "headers": {
+          "Content-Type": "application/json",
+          "x-hasura-admin-secret": "={{$env.HASURA_ADMIN_SECRET}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1760, 300],
+      "name": "Hasura: Insert Assistant"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  id: $json.data.insert_messages_one.id,\n  role: $json.data.insert_messages_one.role,\n  content: $json.data.insert_messages_one.content,\n  created_at: $json.data.insert_messages_one.created_at\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [2020, 300],
+      "name": "Format Output"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Extract Inputs", "type": "main", "index": 0 }]] },
+    "Extract Inputs": { "main": [[{ "node": "Hasura: Verify Ownership", "type": "main", "index": 0 }]] },
+    "Hasura: Verify Ownership": { "main": [[{ "node": "Assert Owner", "type": "main", "index": 0 }]] },
+    "Assert Owner": { "main": [[{ "node": "OpenRouter", "type": "main", "index": 0 }]] },
+    "OpenRouter": { "main": [[{ "node": "Extract Assistant", "type": "main", "index": 0 }]] },
+    "Extract Assistant": { "main": [[{ "node": "Hasura: Insert Assistant", "type": "main", "index": 0 }]] },
+    "Hasura: Insert Assistant": { "main": [[{ "node": "Format Output", "type": "main", "index": 0 }]] }
+  },
+  "active": true
+}

@@ -1,0 +1,25 @@
+actions:
+  - name: sendMessage
+    definition:
+      kind: synchronous
+      handler: "{{N8N_WEBHOOK_URL}}/webhook/send-message"
+      forward_client_headers: true
+      request_transform:
+        method: POST
+        template_engine: Kriti
+        url: "{{$body.handler}}"
+        body: |
+          {
+            "chat_id": {{$body.input.input.chat_id}},
+            "content": {{$body.input.input.content}}
+          }
+    permissions:
+      - role: user
+custom_types:
+  enums: []
+  input_objects:
+    - name: SendMessageInput
+  objects:
+    - name: Message
+    - name: SendMessageOutput
+  scalars: []
